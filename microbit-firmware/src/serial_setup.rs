@@ -2,7 +2,7 @@ use core::fmt;
 use core::ptr::addr_of_mut;
 use embedded_hal_nb::nb;
 use embedded_hal_nb::serial::{Error as SerialError, ErrorType, Read, Write};
-use embedded_io::{Read as EmbeddedIoRead, Write as EmbeddedIoWrite};
+use embedded_io::{Read as EmbeddedIoRead, ReadReady, Write as EmbeddedIoWrite};
 use microbit::hal::uarte::{Instance, Uarte, UarteRx, UarteTx};
 
 static mut TX_BUF: [u8; 1] = [0; 1];
@@ -61,6 +61,11 @@ impl<T: Instance> Write<u8> for UartePort<T> {
 impl<T: Instance> Read<u8> for UartePort<T> {
     fn read(&mut self) -> nb::Result<u8, Self::Error> {
         let mut buffer = [0u8; 1];
+        let res = self.1.read_ready().map_err(|_| nb::Error::Other(Error::Other))?;
+        if !res {
+            return Err(nb::Error::WouldBlock);
+        }
+
         match self.1.read(&mut buffer) {
             Ok(1) => Ok(buffer[0]),
             Ok(_) => Err(nb::Error::WouldBlock),

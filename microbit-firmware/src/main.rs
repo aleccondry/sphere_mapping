@@ -13,7 +13,6 @@ use libm::{atan2f, sqrtf};
 use lsm303agr::{AccelMode, AccelOutputDataRate, AccelScale, Lsm303agr};
 use lsm303agr::{MagMode, MagOutputDataRate};
 use microbit::display::blocking::Display;
-use microbit::hal::prelude::*;
 use microbit::hal::twim;
 use microbit::hal::uarte::{self, Baudrate, Parity};
 use microbit::hal::Timer;
@@ -62,7 +61,6 @@ fn main() -> ! {
 
     // Initialize timer peripherals
     let mut timer0 = Timer::new(board.TIMER0);
-    let mut timer1 = Timer::new(board.TIMER1);
 
     // Initialize LED display
     let mut display = Display::new(board.display_pins);
@@ -114,18 +112,10 @@ fn main() -> ! {
         .unwrap();
 
         // // Try to read one byte non-blocking
-        // match serial.read() {
-        //     Ok(byte) => {
-        //         rprintln!("Received byte: {}", byte);
-        //     }
-        //     Err(nb::Error::WouldBlock) => {
-        //         // No data available, continue
-        //     }
-        //     Err(_) => {
-        //         // Handle other errors if needed
-        //     }
-        // }
-
+        while let Ok(byte) = serial.read() {
+            rprintln!("Received byte: {}", byte);
+        }
+        
         // Get magnitude and angle of the magnetic field.
         // Figure out the direction based on theta
         let dir = send_theta_mag(data);
