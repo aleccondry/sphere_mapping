@@ -22,10 +22,10 @@ def open_serial_port(port: str=SERIAL_PORT, baudrate: int=BAUD_RATE) -> serial.S
     """Open and return a serial port."""
     try:
         uart = serial.Serial(port, baudrate, timeout=1)
-        logger.info(f"Successfully opened {port}")
+        logger.info("Successfully opened %s", port)
         return uart
     except serial.SerialException as e:
-        logger.error(f"Could not open serial port {port}: {e}")
+        logger.error("Could not open serial port %s: %s", port, e)
         sys.exit(1)
 
 def read_serial(uart: serial.Serial | None) -> str | None:
@@ -37,7 +37,7 @@ def read_serial(uart: serial.Serial | None) -> str | None:
             return line_str
         return None
     except Exception as e:
-        logger.error(f"Error reading from serial port: {e}")
+        logger.error("Error reading from serial port: %s", e)
         return None
 
 def parse_line(line: str) -> Measurement | None:
@@ -52,5 +52,5 @@ def parse_line(line: str) -> Measurement | None:
             acc = (float(match.group(4)), float(match.group(5)), float(match.group(6)))
             return Measurement(mag=mag, acc=acc)
         except ValueError:
-            print(f"Error parsing line: {line}")
+            logger.error("Error parsing line: %s", line)
     return None

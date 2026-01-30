@@ -53,11 +53,11 @@ def stream_data(client: connect_python.Client):
                                   center=center,
                                   scale=scale,
                                   radius=radius)
-        
+
         if calibration != curr_calibration:
             curr_calibration = calibration
             curr_calibration.update(calibration)
-        
+
         line = read_serial(ser)
         if not line:
             return

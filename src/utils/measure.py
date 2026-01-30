@@ -16,7 +16,11 @@ class Measurement:
 
 class Calibration:
     """Class to hold calibration parameters."""
-    def __init__(self, is_constant: bool, center: tuple[int, int, int], scale: tuple[int, int, int], radius: int):
+    def __init__(self, 
+                 is_constant: bool, 
+                 center: tuple[int, int, int], 
+                 scale: tuple[int, int, int], 
+                 radius: int):
         self.is_constant = is_constant
         self.center = center
         self.scale = scale
@@ -42,8 +46,8 @@ class Calibration:
         self.center = other.center
         self.scale = other.scale
         self.radius = other.radius
-        logger.info(f"Updated Calibration: {self}")
+        logger.info("Updated Calibration: %s", self)
 
 def update_calibration(calibration: Calibration):
     """Update calibration parameters if they have changed."""
-    logger.info(f"Updated Calibration: {calibration}")
+    logger.info("Updated Calibration: %s", calibration)
