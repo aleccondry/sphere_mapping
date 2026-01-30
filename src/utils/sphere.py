@@ -6,7 +6,7 @@ from vispy import scene
 from vispy.geometry import create_sphere
 from vispy.io import imread
 from vispy.visuals.filters import TextureFilter
-from my_quaternion import Quaternion
+from utils.quaternion import Quaternion
 
 # Size of the rendered earth image visualization
 IMAGE_SIZE = 400

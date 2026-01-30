@@ -5,106 +5,18 @@ is also streamed to a Nominal Connect client.
 """
 from datetime import datetime, timezone
 import time
-import sys
-import re
-import serial
 
 import connect_python
 from connect_python import Units
 from vispy import app
 
-from my_sphere import SphereOrientation, IMAGE_SIZE
-from my_quaternion import Quaternion
-
-# Serial port configuration
-SERIAL_PORT = '/dev/ttyACM0'
-BAUD_RATE = 115200
-
-# Regex pattern to match the expected format
-pattern = re.compile(r'Measurement: (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\r?\n?')
+from utils.sphere import SphereOrientation, IMAGE_SIZE
+from utils.quaternion import Quaternion
+from utils.measure import Calibration
+from utils.serial_parser import open_serial_port, read_serial, parse_line
 
 # Set up logger
 logger = connect_python.get_logger(__name__)
-
-def open_serial_port(port: str=SERIAL_PORT, baudrate: int=BAUD_RATE) -> serial.Serial:
-    """Open and return a serial port."""
-    try:
-        uart = serial.Serial(port, baudrate, timeout=1)
-        logger.info(f"Successfully opened {port}")
-        return uart
-    except serial.SerialException as e:
-        logger.error(f"Could not open serial port {port}: {e}")
-        sys.exit(1)
-
-def read_serial(uart: serial.Serial | None) -> str | None:
-    """Read a line from the serial port."""
-    try:
-        if uart and uart.in_waiting > 0:
-            line_bytes = uart.readline()
-            line_str = line_bytes.decode('utf-8', errors='ignore').strip()
-            return line_str
-        return None
-    except Exception as e:
-        print(f"Error reading from serial port: {e}")
-        return None
-
-class Measurement:
-    """Class to hold measurement data."""
-    def __init__(self, mag: tuple[float, float, float], acc: tuple[float, float, float]):
-        self.mag = mag
-        self.acc = acc
-
-    def __repr__(self) -> str:
-        return f"Measurement(mag={self.mag}, acc={self.acc})"
-
-def parse_line(line: str) -> Measurement | None:
-    """
-    Parse of a line of serial data.
-    Expected format: "Measurement: {mag_x}, {mag_y}, {mag_z}, {acc_x}, {acc_y}, {acc_z}"
-    """
-    match = pattern.search(line)
-    if match:
-        try:
-            mag = (float(match.group(1)), float(match.group(2)), float(match.group(3)))
-            acc = (float(match.group(4)), float(match.group(5)), float(match.group(6)))
-            return Measurement(mag=mag, acc=acc)
-        except ValueError:
-            print(f"Error parsing line: {line}")
-    return None
-
-class Calibration:
-    """Class to hold calibration parameters."""
-    def __init__(self, is_constant: bool, center: tuple[int, int, int], scale: tuple[int, int, int], radius: int):
-        self.is_constant = is_constant
-        self.center = center
-        self.scale = scale
-        self.radius = radius
-
-    def __repr__(self) -> str:
-        return (f"Calibration(is_constant={self.is_constant}, "
-                f"center={self.center}, scale={self.scale}, radius={self.radius})")
-    
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Calibration):
-            return NotImplemented
-        return (self.is_constant == other.is_constant and
-                self.center == other.center and
-                self.scale == other.scale and
-                self.radius == other.radius)
-    
-    def update(self, other):
-        """Update calibration parameters."""
-        if not isinstance(other, Calibration):
-            return
-        self.is_constant = other.is_constant
-        self.center = other.center
-        self.scale = other.scale
-        self.radius = other.radius
-        logger.info(f"Updated Calibration: {self}")
-
-def update_calibration(calibration: Calibration):
-    """Update calibration parameters if they have changed."""
-    logger.info(f"Updated Calibration: {calibration}")
 
 @connect_python.main
 def stream_data(client: connect_python.Client):
