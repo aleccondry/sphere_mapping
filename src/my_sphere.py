@@ -31,7 +31,7 @@ class SphereOrientation:
 
         # Textured Earth sphere
         meshdata = create_sphere(radius=1.0, rows=24, cols=48)
-        earth_image = imread('earth_texture.jpg')
+        earth_image = imread("assets/earth_texture.jpg")
         self.sphere = scene.visuals.Mesh(
             meshdata=meshdata,
             shading='smooth',

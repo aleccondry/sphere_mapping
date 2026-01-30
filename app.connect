@@ -15,7 +15,7 @@ bottom_panel:
   - controls: script_table
     scripts:
     - label: Microbit V2 Sphere
-      path: sphere_app.py
+      path: src/sphere_app.py
 
 left_panel:
   width: 0.5
