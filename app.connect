@@ -1,0 +1,84 @@
+title: My-Application
+
+python:
+  packages:
+  - pyserial
+  - numpy
+  - vispy
+  - ahrs
+
+streaming:
+  buffer_size: 5000
+
+bottom_panel:
+  layout:
+  - controls: script_table
+    scripts:
+    - label: Microbit V2 Sphere
+      path: sphere_app.py
+
+left_panel:
+  width: 0.5
+  tabs:
+  - name: Visualization
+    layout:
+    - display: video
+      frames: frame_buffer
+
+right_panel:
+  width: 0.5
+  tabs:
+  - name: Data
+    layout:
+    - title: Yaw
+      display: stream_value
+      stream_id: yaw
+      channel: yaw
+      color: rgb(0, 0, 255)
+    - title: Pitch
+      display: stream_value
+      stream_id: pitch
+      channel: pitch
+      color: rgb(43, 114, 43)
+    - title: Roll
+      display: stream_value
+      stream_id: roll
+      channel: roll
+      color: rgb(255,0,0)
+    - id: calibration_type
+      label: "Calibration Type"
+      input: dropdown
+      options: ["constant", "manual"]
+      default: "constant"
+    - id: calibration_constants
+      label: Calibration Constants
+      input: text
+      default: ""
+    - id: center_x
+      label: Center X
+      input: number
+      default: 20962
+    - id: center_y
+      label: Center Y
+      input: number
+      default: 34322
+    - id: center_z
+      label: Center Z
+      input: number
+      default: -23924
+    - id: scale_x
+      label: Scale X
+      input: number
+      default: 1203
+    - id: scale_y
+      label: Scale Y
+      input: number
+      default: 1177
+    - id: scale_z
+      label: Scale Z
+      input: number
+      default: 1133
+    - id: radius
+      label: Radius
+      input: number
+      default: 48098
