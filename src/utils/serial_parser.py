@@ -1,13 +1,13 @@
 """
 Module for serial communication and data parsing.
 """
-import serial
 import sys
 import re
 
 import connect_python
+import serial
 
-from utils.measure import Measurement
+from .measure import Measurement
 
 logger = connect_python.get_logger(__name__)
 
