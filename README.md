@@ -1,8 +1,7 @@
-# Nominal Microbit + Sphere App
-
+# Python Nominal Connect App + Microbit Firmware
 This repo contains an embedded Rust firmware for Micro:bit v2 and a Python visualization pipeline that maps live accelerometer + magnetometer data to an oriented textured sphere, streaming yaw/pitch/roll to a Nominal Connect client.
 
-**Microbit-Firmware**
+## Microbit Firmware
 - **Target:** nRF52833 (Cortex-M4F) on Micro:bit v2; `thumbv7em-none-eabihf`.
 - **Build:** uses Cargo and a simple Makefile. See [microbit-firmware/Makefile](microbit-firmware/Makefile).
 - **Flash:** via `cargo embed` using [microbit-firmware/Embed.toml](microbit-firmware/Embed.toml).
@@ -30,7 +29,7 @@ Notes:
 - Manual calibration can be triggered by sending `SCAL` over UART; firmware responds with `Calibration: center_x, center_y, center_z, scale_x, scale_y, scale_z, radius`.
 - Default calibration constants are embedded; see [microbit-firmware/src/main.rs](microbit-firmware/src/main.rs).
 
-**Python Util**
+## Python Analysis
 - **Location:** [src/utils](src/utils).
 - **Modules:**
 	- [serial_parser.py](src/utils/serial_parser.py): opens `/dev/ttyACM0`, parses `Measurement:` and `Calibration:` lines.
@@ -47,7 +46,7 @@ pip install --upgrade pip
 pip install pyserial numpy vispy ahrs
 ```
 
-**Sphere_app + app.connect**
+## Nominal Connect
 - **Entry:** [src/sphere_app.py](src/sphere_app.py) streams frames and orientation to a Nominal Connect client.
 - **UI config:** [app.connect](app.connect) defines panels, sliders, and links the script.
 - **Streams:** `yaw`, `pitch`, `roll` (radians) and an RGB `frame_buffer` of the sphere.
