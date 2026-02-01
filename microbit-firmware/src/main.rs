@@ -9,8 +9,8 @@ use core::fmt::Write;
 use cortex_m_rt::entry;
 use embedded_hal_nb::serial::Read;
 use heapless::Vec;
-use libm::{atan2f, sqrtf};
-use lsm303agr::{AccelMode, AccelOutputDataRate, AccelScale, Lsm303agr};
+use libm::atan2f;
+use lsm303agr::{AccelMode, AccelOutputDataRate, Lsm303agr};
 use lsm303agr::{MagMode, MagOutputDataRate};
 use microbit::display::blocking::Display;
 use microbit::hal::twim;
@@ -23,7 +23,7 @@ use rtt_target::{rprintln, rtt_init_print};
 use serial_setup::UartePort;
 
 use crate::calibration::{calc_calibration, calibrated_measurement, Calibration, Measurement};
-use crate::led::{dir_from_theta, direction_to_led, Direction};
+use crate::led::{dir_from_theta, direction_to_led};
 
 const CALIBRATION: Calibration = Calibration {
     center: Measurement {
@@ -38,6 +38,11 @@ const CALIBRATION: Calibration = Calibration {
     },
     radius: 48098,
 };
+
+enum SerialCommand {
+    ManualCal,
+    Unknown,
+}
 
 #[entry]
 fn main() -> ! {
@@ -71,29 +76,28 @@ fn main() -> ! {
 
     // Configure the sensor
     sensor
-        .set_accel_mode_and_odr(&mut timer0, AccelMode::Normal, AccelOutputDataRate::Hz50)
+        .set_accel_mode_and_odr(&mut timer0, AccelMode::Normal, AccelOutputDataRate::Hz10)
         .unwrap();
     sensor
-        .set_mag_mode_and_odr(
-            &mut timer0,
-            MagMode::HighResolution,
-            MagOutputDataRate::Hz10,
-        )
+        .set_mag_mode_and_odr(&mut timer0, MagMode::LowPower, MagOutputDataRate::Hz10)
         .unwrap();
-    sensor.set_accel_scale(AccelScale::G16).unwrap();
-
     let mut sensor = sensor.into_mag_continuous().ok().unwrap();
-    let calibration = CALIBRATION.clone();
-    // let calibration = calc_calibration(&mut sensor, &mut display, &mut timer0);
-    rprintln!("Calibration: {:?}", calibration);
-    rprintln!("Calibration done, entering busy loop");
-    write!(serial, "Calibration: {:?}\r\n", calibration).unwrap();
 
+    // Set initial calibration using precomputed constants.
+    let mut calibration = CALIBRATION.clone();
+    rprintln!("{}", calibration);
+    rprintln!("Calibration done, entering busy loop");
+    write!(serial, "{}\r\n", calibration).unwrap();
+    let mut buffer = Vec::<u8, 32>::new();
+
+    // Main loop
     loop {
+        // Read magnetometer data.
         while !sensor.mag_status().unwrap().xyz_new_data() {}
         let data = sensor.magnetic_field().unwrap();
         let data = calibrated_measurement(data, &calibration);
 
+        // Read accelerometer data.
         while !sensor.accel_status().unwrap().xyz_new_data() {}
         let accel_data = sensor.acceleration().unwrap();
 
@@ -105,59 +109,48 @@ fn main() -> ! {
         let gy = data.y as f32;
         let gz = data.z as f32;
 
+        // Send sensor data over serial.
         write!(
             serial,
             "Measurement: {gx:.2}, {gy:.2}, {gz:.2}, {ax:.2}, {ay:.2}, {az:.2}\r\n"
         )
         .unwrap();
 
-        // // Try to read one byte non-blocking
+        // Read any incoming serial data.
         while let Ok(byte) = serial.read() {
-            rprintln!("Received byte: {}", byte);
+            if byte == b'\r' || byte == b'\n' || buffer.len() >= buffer.capacity() {
+                rprintln!("Received: {:?}", core::str::from_utf8(&buffer).unwrap());
+                let res = parse_command(&buffer);
+                match res {
+                    SerialCommand::ManualCal => {
+                        calibration = calc_calibration(&mut sensor, &mut display, &mut timer0);
+                        rprintln!("New calibration: {:?}", calibration);
+                        write!(serial, "{}\r\n", calibration).unwrap();
+                    }
+                    SerialCommand::Unknown => {
+                        rprintln!("Unknown command");
+                    }
+                }
+                buffer.clear();
+                continue;
+            }
+            buffer.push(byte).unwrap();
         }
-        
-        // Get magnitude and angle of the magnetic field.
-        // Figure out the direction based on theta
-        let dir = send_theta_mag(data);
 
+        // Get angle of the magnetic field.
+        // Figure out the direction based on theta
+        let theta = atan2f(gy, gx);
+        let dir = dir_from_theta(theta);
+
+        // Update LED display to point at magnetic North.
         display.show(&mut timer0, direction_to_led(dir), 100);
     }
 }
 
-fn send_theta_mag(measurement: Measurement) -> Direction {
-    let gx = measurement.x as f32;
-    let gy = measurement.y as f32;
-    let gz = measurement.z as f32;
-
-    // Get magnitude and angle of the magnetic field.
-    let theta = atan2f(gy, gx);
-    let magnitude = sqrtf(gx * gx + gy * gy + gz * gz);
-    rprintln!(
-        "{} nT, {} mG, theta: {} rad",
-        magnitude,
-        magnitude / 100.0,
-        theta
-    );
-    dir_from_theta(theta)
-}
-
-fn run_rev<T>(serial: &mut UartePort<T>) -> !
-where
-    T: uarte::Instance,
-{
-    let mut buffer = Vec::<u8, 32>::new();
-    loop {
-        let byte = nb::block!(serial.read()).unwrap();
-        if byte == b'\r' {
-            rprintln!("Received: {:?}", core::str::from_utf8(&buffer).unwrap());
-            rprintln!(
-                "Reversed: {:?}",
-                core::str::from_utf8(&buffer.iter().rev().cloned().collect::<Vec<u8, 32>>())
-                    .unwrap()
-            );
-            buffer.clear();
-        } else {
-            buffer.push(byte).unwrap();
-        }
+fn parse_command(command: &[u8]) -> SerialCommand {
+    if command == b"SCAL" {
+        rprintln!("Manual calibration requested");
+        return SerialCommand::ManualCal;
     }
+    SerialCommand::Unknown
 }

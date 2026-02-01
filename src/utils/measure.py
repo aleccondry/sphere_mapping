@@ -29,7 +29,7 @@ class Calibration:
     def __repr__(self) -> str:
         return (f"Calibration(is_constant={self.is_constant}, "
                 f"center={self.center}, scale={self.scale}, radius={self.radius})")
-    
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Calibration):
             return NotImplemented
@@ -37,17 +37,3 @@ class Calibration:
                 self.center == other.center and
                 self.scale == other.scale and
                 self.radius == other.radius)
-    
-    def update(self, other):
-        """Update calibration parameters."""
-        if not isinstance(other, Calibration):
-            return
-        self.is_constant = other.is_constant
-        self.center = other.center
-        self.scale = other.scale
-        self.radius = other.radius
-        logger.info("Updated Calibration: %s", self)
-
-def update_calibration(calibration: Calibration):
-    """Update calibration parameters if they have changed."""
-    logger.info("Updated Calibration: %s", calibration)

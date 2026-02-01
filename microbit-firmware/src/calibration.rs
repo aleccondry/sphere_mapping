@@ -28,6 +28,23 @@ pub struct Calibration {
     pub radius: u32,
 }
 
+
+impl core::fmt::Display for Calibration {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "Calibration: {}, {}, {}, {}, {}, {}, {}",
+            self.center.x,
+            self.center.y,
+            self.center.z,
+            self.scale.x,
+            self.scale.y,
+            self.scale.z,
+            self.radius
+        )
+    }
+}
+
 impl Default for Calibration {
     fn default() -> Calibration {
         Calibration {
