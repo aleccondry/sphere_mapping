@@ -4,7 +4,6 @@ and visualizes the orientation on a textured 3D sphere. The orientation data (ya
 is also streamed to a Nominal Connect client.
 """
 from datetime import datetime, timezone
-import time
 
 import connect_python
 from connect_python import Units
@@ -42,11 +41,8 @@ def stream_data(client: connect_python.Client):
     ser = open_serial_port()
     sphere = SphereOrientation(render=False)
     quat = Quaternion()
-    last = time.time()
 
     def on_timer(event):
-        nonlocal last
-
         # Handle calibration updates from the client.
         cal_type = client.get_value("calibration_type") == "constant"
         if not cal_type:
@@ -68,12 +64,8 @@ def stream_data(client: connect_python.Client):
             handle_calibration_data(client, result)
             return
 
-        now = time.time()
-        dt = now - last
-        last = now
-
         # Update quaternion and sphere orientation.
-        quat.update(result, dt)
+        quat.update(result)
         sphere.update(quat)
 
         # Extract Euler angles from quaternion.

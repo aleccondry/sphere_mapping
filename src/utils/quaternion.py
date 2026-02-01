@@ -7,13 +7,12 @@ from ahrs.filters import FQA
 class Quaternion:
     """Quaternion representation and conversion to rotation matrix."""
     def __init__(self):
-        # self.filt = Madgwick(beta=0.1)
         self.q = np.array([1.0, 0.0, 0.0, 0.0])
-    
+
     def __repr__(self) -> str:
         return f"Quaternion(q={self.q})"
 
-    def update(self, measurement, dt):
+    def update(self, measurement):
         """Update quaternion from magnetometer and accelerometer data."""
         acc = np.array(measurement.acc, dtype=float)
         acc_norm = np.linalg.norm(acc)
